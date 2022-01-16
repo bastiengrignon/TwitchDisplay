@@ -24,16 +24,19 @@
 #include "CACert.h"
 #include "constants.h"
 
+/******************
+ * Time variables *
+ ******************/
 unsigned long lastTwitchUpdate{0};
 unsigned long twitchUpdateInterval{30000}; // Time between requests (30s)
 unsigned long lastAccessTokenUpdate{0};
 unsigned long accessTokenUpdateInterval{0};
-unsigned long lastIconUpdate{0};
-unsigned long iconUpdateInterval{20000};
-bool toggleIcon{false};
 unsigned long lastTextUpdate{0};
 unsigned long textUpdateInterval{15000};
 bool toggleText{false};
+
+const char *icons[] = { "&", "^" };
+String twitchAccessToken{""};
 
 typedef struct
 {
@@ -44,13 +47,13 @@ typedef struct
     String liveViewerCount{""};
 } TwitchInformation;
 
+/******************
+ *** Instances ****
+ ******************/
 AsyncWebServer server(SERVER_PORT);
 WiFiClientSecure client;
 MD_Parola display = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 TwitchInformation twitchInfos;
-
-const char *icons[] = { "&", "^" };
-String twitchAccessToken{""};
 
 /******************
  *** Prototypes ***
@@ -87,7 +90,6 @@ void loop() {
 
   if (display.displayAnimate()) {
     if (display.getZoneStatus(0)) {
-      toggleIcon = not toggleIcon;
       intensity += intensityOffset;
       if (intensity == 15 || intensity == 0) intensityOffset = -intensityOffset;
 
@@ -99,7 +101,6 @@ void loop() {
 
       display.setPause(1, toggleText ? 10000 : 0);
       display.setTextEffect(1, toggleText ? Constants::Display::DEFAULT_SCROLL_EFFECT : PA_SCROLL_LEFT, PA_SCROLL_LEFT);
-      const String thanksMessageFollow{"Merci " + twitchInfos.lastFollowerName + " pour le follow !!!"};
       display.setTextBuffer(1, toggleText ? twitchInfos.followersNumber.c_str() : twitchInfos.lastFollowerName.c_str());
       display.displayReset(1);
     }
@@ -219,6 +220,14 @@ const String fetchTwitchAccessToken() {
     lastAccessTokenUpdate = millis();
   }
   return accessToken;
+}
+
+/******************
+ **** Display *****
+ ******************/
+ // Todo : Learn why not working
+const String thanksFollowDisplay(const String name) {
+    return String("merci " + name + "pour le follow !!!");
 }
 
 /******************
